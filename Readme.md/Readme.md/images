@@ -1,0 +1,373 @@
+# Installing Java 17 on Windows OS
+
+https://www.oracle.com/in/java/technologies/downloads/#java17-windows
+
+  
+  Run the downloaded .exe file to install Java.
+
+  ![preview](../latest-java17-oracle-ss.png)
+
+  Java will be installed in C:\Program Files\Java\jdk-17
+
+  ![preview](../java-latest-ss.png)
+
+   ## Set Environment Variables
+
+  Right-click on This PC > Properties > Advanced System Settings > Environment Variables.
+
+  ![preview](../java-home%20-path-ss2.png)
+
+ Go to System Variables,click New and set the following:
+ Variable Name: JAVA_HOME
+ Variable Value: C:\Program Files\Java\jdk-17
+ Add Path variable: %JAVA_HOME%\bin
+
+ ![preview](../java-pathvariable-ss.png)
+
+ ## Verify Java Installation
+
+ ![preview](../java-version-ss.png)
+
+# Installing Apache Maven On Windows OS
+
+## Download the Apache Maven
+
+ https://maven.apache.org/download.cgi
+
+ Install Apache Maven
+
+ Extract the zip file to a directory
+
+ C:\Program Files (x86)\apache-maven-3.9.9-bin (1)
+
+ ![preview](../maven-folder-ss.png)
+
+ ## Set Environment Variables
+
+ Right-click on This PC > Properties > Advanced System Settings > Environment Variables.
+
+ ![preview](../maven-path-ss.png)
+
+Go to System Variables, click New and set:
+Variable Name: MAVEN_HOME
+Variable Value: C:\apache-maven-3.9.9
+Add Path variable: %MAVEN_HOME%\bin.
+
+![preview](../maven-pathvariable-ss.png)
+
+## Verify Maven Installation
+
+![previw](../mvn-version-ss.png)
+
+# Installing Apache Tomcat on Windows OS
+
+## Download Apache Tomcat
+
+https://tomcat.apache.org/download-90.cgi
+
+![preview](../apache-download-ss.png)
+
+Install Apache Tomcat
+
+![preview](../apache-tomcat-ss.png)
+
+Extract the zip file to a directory
+
+C:\Program Files\Apache Software Foundation
+
+## Set Environment Variables 
+
+Right-click on This PC > Properties > Advanced System Settings > Environment Variables.
+
+## Verify Tomcat Installation
+
+Open a web browser and navigate to 
+
+http://localhost:8080
+
+![preview](../tomcatserver-ss6.png)
+
+# Creating a Simple Hello World Web Application with Maven 
+
+Run the following Maven command to generate a basic Maven web app 
+
+   mvn archetype:generate -DgroupId=com.example -DartifactId=helloworld -DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false
+
+   ![preview](../maven-cmd-ss.png)
+
+   ## Verify Project Structure
+
+   Navigate to the newly created helloworld directory 
+        
+        cd helloworld
+
+   ![preview](../cd-helloworld-ss.png) 
+
+   List the contents of the directory
+
+          ls
+
+   We should see the following Format
+
+       pom.xml
+        src/
+       target/
+
+   Build the Project
+
+      mvn clean package
+
+  This mvn package will generate the helloworld.war file in the target/ directory.
+
+  ## Deploy the WAR File to Tomcat
+    
+    copy the helloworld.war file to the Tomcat webapps/ directory
+
+    copy target\helloworld.war "C:\Program Files\Apache Software Foundation\Tomcat 9.0\webapps\"
+
+  ## Start Tomcat Server
+
+Go to the bin/ directory of your Tomcat installation 
+
+    cd C:\apache-tomcat-9.x.x\bin
+
+    ![preview](../tomcatserver-login-ss8.png)
+
+   
+    Run the startup.bat script to start Tomcat
+
+        startup.bat
+
+ ## Access the Application 
+
+  Open a browser and go to http://localhost:8080/helloworld to see your "Hello World" application in action.
+
+  ![preview](../helloworld-ss7.png)
+
+ # Automating the Deployment with Jenkins
+
+  # Step 1: Install the Jenkins
+
+  ## Download the Jenkins
+
+ https://www.jenkins.io/doc/book/installing/windows/
+
+ ![preview](../jenkins-win-ss.png)
+
+ ![preview](../jenkins-dashboard-ss.png)
+
+ ## Step 2: Configure Jenkins Pipeline
+
+  Create a New Jenkins Job
+
+  Open Jenkins in your browser and log in.
+  Click New Item and select Pipeline Name your pipeline.
+
+![preview](../jenkins-login-ss.png)
+
+ Define the Pipeline Script
+
+ Under the Pipeline section of your Jenkins job, enter the following declarative pipeline script
+
+ pipeline {
+    agent any
+
+    environment {
+        JAVA_HOME = "C:\\Program Files\\Java\\jdk-17"
+        MAVEN_HOME = 'C:\\apache-maven-3.9.9'
+        PATH = "${JAVA_HOME}\\bin;${MAVEN_HOME}\\bin;${env.PATH}"
+    }
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                bat 'if exist helloworld (rmdir /s /q helloworld)'
+            }
+        }
+
+        stage('Generate Maven Project') {
+            steps {
+                bat '''
+                    mvn archetype:generate ^
+                        -DgroupId=com.example ^
+                        -DartifactId=helloworld ^
+                        -DarchetypeArtifactId=maven-archetype-webapp ^
+                        -DinteractiveMode=false
+                '''
+                bat 'dir /b /s helloworld'
+            }
+        }
+
+        stage('Build Maven Project') {
+            steps {
+                bat '''
+                    cd helloworld && mvn clean package
+                '''
+            }
+        }
+
+        stage('Deploy to Tomcat') {
+            steps {
+                bat '''
+                    copy "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\HelloWorldAppPipeline\\helloworld\\target\\helloworld.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 9.0\\webapps\\"
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Build completed.'
+        }
+        
+        success {
+            echo 'Build was successful.'
+        }
+        
+        failure {
+            echo 'Build failed.'
+        }
+    }
+}
+
+Click save to Save the Pipeline
+
+## Execute the Jenkins Job
+
+ Click Build Now to start the pipeline.
+ 
+ Monitor the stages under the "Build" section to ensure the build and deployment process completes successfully.
+
+ ![preview](../jenkins-build-ss.png)
+
+ ## Verifying the Automated Deployment
+ 
+ Access the Application
+
+ After the Jenkins job completes successfully, open a browser and go to http://localhost:8081/helloworld.
+
+ ![preview](../18.png)
+
+ # Upstream Job: Maven Build Job
+
+  ## Steps to Configure an Upstream Job
+
+  Create the Upstream Job
+
+  Navigate to Jenkins Dashboard.
+
+  Click New Item > Freestyle project.
+  
+  Name the job: Upstream_job
+  
+  Click OK.
+
+  ## Configure Upstream Job
+
+   Under Build,add the following build step
+
+     rmdir /S /Q helloworld
+
+     mvn archetype:generate ^
+    -DgroupId=com.example ^
+    -DartifactId=helloworld ^
+    -DarchetypeArtifactId=maven-archetype-webapp ^
+    -DinteractiveMode=false
+
+     cd helloworld
+     mvn clean package
+
+     After Adding the build steps to Execute Windows batch command line
+
+     Click Ok & Save.
+
+![preview](../upstream-ss.png)
+
+
+## Verify the Upstream job
+
+![preview](../upstream-job1-ss.png)
+
+We can now manually run the upstream job
+
+![preview](../upstream-console-ss.png)
+
+## Downstream Job: Deployment to Tomcat
+
+ ## Steps to Configure a Downstream Job
+
+   Create the Downstream Job
+
+   Navigate to Jenkins Dashboard
+
+   Click New Item > Freestyle project
+
+   Name the job Downstream_job
+
+   Click OK
+
+   ## Add the build step to Deploy the WAR File
+
+   Under Build, add a Windows batch command to deploy the WAR file to the Tomcat webapps directory
+
+   ![preview](../downstream-job-ss.png)
+
+     xcopy /Y "C:\ProgramData\Jenkins\.jenkins\workspace\Helloworldproject\helloworld\target\helloworld.war" "C:\Program Files\Apache Software Foundation\Tomcat 9.0\webapps\"
+
+  ![preview](../downstreamjob-ss1.png)
+
+  Add Post-Build Action
+
+  Click Save to configure the downstream job.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+
+
+
+
+
+
+
+    
+
+           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
